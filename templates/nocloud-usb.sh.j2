@@ -1,0 +1,11 @@
+#!/bin/sh
+
+DEVICE="{{ cc.dev }}"
+CIDATADIR="{{ cc.cidatadir }}"
+
+
+test  "$(lsblk -l -p -n $DEVICE -o HOTPLUG | sort |uniq)" -eq "1" && {
+cd $CIDATADIR && cloud-localds nocloud.iso   user-data meta-data
+lsblk -l -p -n $DEVICE  | awk 'NF > 6 {print $1}' | xargs -n1 -r -p sudo umount
+sudo dd if=nocloud.iso of=$DEVICE bs=1k conv=fdatasync status=progress
+}

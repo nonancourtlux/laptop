@@ -1,0 +1,26 @@
+#!/bin/sh
+
+DEVICE="{{ cc.dev }}"
+CIDATADIR="{{ cc.cidatadir }}"
+URL="{{ cc.url }}"
+DIR="{{ cc.dir }}"
+
+ISO="${URL##*/}"
+FILE=$DIR/$ISO
+
+# We download the iso
+cd $DIR &&   shasum -a 256 -c $CIDATADIR/signatures | grep "^$ISO: OK" || { curl $URL | tee $FILE | sha256sum ; }
+
+
+# We check if device is removable
+test  "$(lsblk -l -p -n $DEVICE -o HOTPLUG | sort |uniq)" -eq "1" && {
+lsblk -l -p -n $DEVICE  | awk 'NF > 6 {print $1}' | xargs -n1 -r -p sudo umount
+#sudo dd if=/dev/zero of=$DEVICE bs=512 count=1 seek=0
+sudo sfdisk --delete $DEVICE
+sudo usb-creator-gtk --iso=$FILE
+
+#sudo dd if=$FILE of=$DEVICE bs=1k conv=fdatasync status=progress
+sudo partprobe $DEVICE
+lsblk -l -p -n $DEVICE  | awk 'NF > 6 {print $1}' | xargs -n1 -r -p sudo umount
+}
+

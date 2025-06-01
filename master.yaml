@@ -1,0 +1,53 @@
+- name: Write hostname
+  hosts: localhost
+  vars_files:
+   - vars/default.yaml 
+  tasks:
+  - name: Load a variable file based on the OS type, or a default if not found. Using free-form to specify the file.
+    ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', params) }}"
+    vars:
+      params:
+       files:
+        - '{{ansible_distribution}}.yaml'
+        - '{{ansible_os_family}}.yaml'
+        - default.yaml
+       paths:
+        - 'vars'
+     
+  - ansible.builtin.set_fact:
+     cc_secrets: "{{ lookup('ansible.builtin.file', cc.secrets) | from_yaml  }}"
+  - ansible.builtin.set_fact:
+     cc: "{{ cc | ansible.builtin.combine(cc_secrets.cc,recursive=true) }}"
+ 
+  - ansible.builtin.set_fact:
+     cc_hash: "{{ lookup('ansible.builtin.pipe', 'mkpasswd -m yescrypt -s  '+cc.unixadmin) }}"  
+     cc_hashu: "{{ lookup('ansible.builtin.pipe', 'mkpasswd -m yescrypt -s  '+cc.unixuser) }}"  
+  - ansible.builtin.set_fact:
+     cc: "{{ cc | ansible.builtin.combine({'hash':cc_hash,'hashu':cc_hashu}) }}"
+  
+
+  - ansible.builtin.template:
+       src: "templates/{{ item }}.j2"
+       dest: "{{ cc.cidatadir }}/{{ item }}"
+    loop:
+     - "user-data"
+     - "meta-data"
+     - "network-config"
+     - "nocloud-usb.sh"
+     - "media-usb.sh"
+  - ansible.builtin.file:
+       path: "{{ cc.cidatadir }}/{{ item }}"
+       mode: '0755'
+    loop:
+     - "nocloud-usb.sh"
+     - "media-usb.sh"
+  - ansible.builtin.copy:
+      src: files/signatures
+      dest: "{{ cc.cidatadir }}/signatures"
+
+  - debug:
+      msg:
+       - "Insert a small usb and run {{ cc.cidatadir }}/nocloud-usb.sh"
+       - "Insert a larger usb and run {{ cc.cidatadir }}/media-usb.sh"
+
+
