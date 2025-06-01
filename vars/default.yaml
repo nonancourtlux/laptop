@@ -7,7 +7,8 @@ cc:
  shafile: files/signatures
  secrets: vars/secrets.yaml
  issue: 'Ubuntu $ISO\nIP - $(hostname -I)'
- hostname: 'ubuntu-host-$(openssl rand -hex 3)'
+ #hostname: 'ubuntu-host-$(openssl rand -hex 3)'
+ hostname: 'ubuntu'
  git: https://github.com/nonancourtlux/laptop.git
  url: https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-desktop-amd64.iso
  
