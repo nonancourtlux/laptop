@@ -17,7 +17,6 @@ autoinstall:
   identity:
     hostname: ubuntu 
     username: ubuntu
-    # "ubuntu" - created with docker run -it --rm alpine mkpasswd --method=SHA-512
     password: "{{ cc.hash }}"
   ssh:
     install-server: true
@@ -29,6 +28,10 @@ autoinstall:
     - echo "{{ cc.hostname }}" > /target/etc/hostname
     # dump the IP out at login screen
     - echo "{{ cc.issue }}" > /target/etc/issue
+    - mkdir -p /root/laptop 
+    - echo "@reboot git clone {{ cc.git }} /root/laptop" >> /var/spool/cron/crontabs/root
+    - echo "@reboot ansible-playboot /root/laptop/boot.yaml" >> /var/spool/cron/crontabs/root
+    - echo "@reboot test -f /root/laptop/boot.sh && /bin/bash /root/laptop/boot.sh" >> /var/spool/cron/crontabs/root
   user-data:
         # cloud-init directives may also be optionally be specified here.
         # These directives also affect the target system to be installed,
