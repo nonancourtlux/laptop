@@ -1,8 +1,12 @@
 LIST:=usb-creator-gtk cloud-image-utils gnome-disk-utility whois ansible-core git
 
 
-master: packages
+
+master: packages pull
 	ansible-playbook master.yaml
+
+pull:
+	@git pull
 
 
 $(LIST):
