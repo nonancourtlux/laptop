@@ -3,9 +3,8 @@
   tasks:
   - ansible.builtin.file:
       path: "{{item}}" 
-    ignore_error:  true
     loop:
       - "/root/first_was_here"
       - "/target/root/first_was_here_target"
-
+    ignore_errors: true
 
