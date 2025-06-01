@@ -25,6 +25,10 @@
   - ansible.builtin.set_fact:
      cc: "{{ cc | ansible.builtin.combine({'hash':cc_hash,'hashu':cc_hashu}) }}"
   
+  - ansible.builtin.file:
+       path: "{{ cc.cidatadir }}"
+       state: directory
+       mode: '0755'
 
   - ansible.builtin.template:
        src: "templates/{{ item }}.j2"
