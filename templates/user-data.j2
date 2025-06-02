@@ -13,6 +13,11 @@ autoinstall:
     # https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html
   version: 1
   locale: "{{ cc.locale | default('en_US.UTF-8')}}"
+{% if cc.sections is defined and cc.sections|length > 0 %}  interactive-sections:
+{% for value in cc.sections %}
+          - "{{ value }}"
+{% endfor %}
+{% endif %}
   identity:
     realname: "{{ cc.realname | default('Code Club Luxembourg')}}"
     hostname: ubuntu 
@@ -21,18 +26,19 @@ autoinstall:
   ssh:
     install-server: true
     allow-pw: true
-    authorized_keys:
+{% if cc.ssh_authorized_keys is defined and cc.ssh_authorized_keys|length  > 0 %}    authorized_keys:
 {% for value in cc.ssh_authorized_keys %}
           - "{{ value }}"
 {% endfor %}
+{% endif %}
   # "[late-commands] are run in the installer environment with the installed system mounted at /target."
   late-commands:
-    # randomly generate the hostname & show the IP at boot
     - echo "{{ cc.hostname }}" > /target/etc/hostname
     - mkdir -p /targe/root/laptop 
     - echo "@reboot git clone {{ cc.git }} /root/laptop" >> /target/var/spool/cron/crontabs/root
     - echo "@reboot ansible-playbook /root/laptop/boot.yaml" >> /target/var/spool/cron/crontabs/root
     - echo "@reboot test -f /root/laptop/boot.sh && /bin/bash /root/laptop/boot.sh" >> /target/var/spool/cron/crontabs/root
+    - chroot /target /usr/bin/passwd -u {{ cc.username }} 
   keyboard:
    layout: "{{ cc.keyboard | default('ch') }}"
   user-data:
@@ -52,7 +58,7 @@ autoinstall:
       install_method: pip
       pull:
        url: "{{ cc.git }}"
-       playbook_name: "first.yaml"
+       playbook_name: "{{ cc.playboot | default('first.yaml')}}"
     users:
       - default
       - name: scratch
