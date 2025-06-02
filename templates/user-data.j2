@@ -1,11 +1,11 @@
 #cloud-config
 # cloud-init directives may optionally be specified here.
 # These directives affect the ephemeral system performing the installation.
-runcmd:
-  - [eval, 'echo $(cat /proc/cmdline) "autoinstall" > /root/cmdline']
-  - [eval, 'mount -n --bind -o ro /root/cmdline /proc/cmdline']
-  - [eval, 'snap restart subiquity.subiquity-server']
-  - [eval, 'snap restart subiquity.subiquity-service']
+#runcmd:
+#  - [eval, 'echo $(cat /proc/cmdline) "autoinstall" > /root/cmdline']
+#  - [eval, 'mount -n --bind -o ro /root/cmdline /proc/cmdline']
+#  - [eval, 'snap restart subiquity.subiquity-server']
+#  - [eval, 'snap restart subiquity.subiquity-service']
 autoinstall:
     # autoinstall directives must be specified here, not directly at the
     # top level.  These directives are processed by the Ubuntu Installer,
