@@ -3,5 +3,4 @@
   tasks:
   - ansible.builtin.file:
        path: "/tmp/boot_was_here" 
-
-
+       state: touch
