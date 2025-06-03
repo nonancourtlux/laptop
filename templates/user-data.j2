@@ -35,7 +35,7 @@ autoinstall:
     - echo "@reboot test -f /root/laptop/boot.sh && /bin/bash /root/laptop/boot.sh" >> /target/var/spool/cron/crontabs/root
     - chroot /target /usr/bin/passwd -u {{ cc.username }}
   keyboard:
-   layout: "{{ cc.keyboard | default('ch') }}"
+   layout: "{{ cc.keyboard | default(cc.layout) | default('ch') }}"
 {% endif %}
   identity:
     realname: "{{ cc.realname | default('Code Club Luxembourg')}}"
