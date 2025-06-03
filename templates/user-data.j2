@@ -13,6 +13,7 @@ autoinstall:
   version: 1
 {% if cc.level < 2 %}
   locale: "{{ cc.locale | default('en_US.UTF-8')}}"
+  timezone: "{{ cc.timezone | default('Europe/Luxembourg')}}"
 {% if cc.sections is defined and cc.sections|length > 0 %}  interactive-sections:
 {% for value in cc.sections %}
           - "{{ value }}"
@@ -21,7 +22,7 @@ autoinstall:
   ssh:
     install-server: true
     allow-pw: true
-{% if cc.ssh_authorized_keys is defined and cc.ssh_authorized_keys|length  > 0 %}    authorized_keys:
+{% if cc.ssh_authorized_keys is defined and cc.ssh_authorized_keys|length  > 0 %}    authorized-keys:
 {% for value in cc.ssh_authorized_keys %}
           - "{{ value }}"
 {% endfor %}
@@ -29,11 +30,12 @@ autoinstall:
   # "[late-commands] are run in the installer environment with the installed system mounted at /target."
   late-commands:
     - echo "{{ cc.hostnamexp | default(cc.hostname) | default('ubuntu') }}" > /target/etc/hostname
-    - mkdir -p /targe/root/laptop
+    - mkdir -p /target/root/laptop
+    - echo "@reboot mkdir -p /root/laptop"
     - echo "@reboot git clone {{ cc.git }} /root/laptop" >> /target/var/spool/cron/crontabs/root
     - echo "@reboot ansible-playbook /root/laptop/boot.yaml" >> /target/var/spool/cron/crontabs/root
     - echo "@reboot test -f /root/laptop/boot.sh && /bin/bash /root/laptop/boot.sh" >> /target/var/spool/cron/crontabs/root
-    - chroot /target /usr/bin/passwd -u {{ cc.username }}
+#    - chroot /target /usr/bin/passwd -u {{ cc.username }}
   keyboard:
    layout: "{{ cc.keyboard | default(cc.layout) | default('ch') }}"
 {% endif %}
