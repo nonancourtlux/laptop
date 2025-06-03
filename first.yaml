@@ -2,7 +2,8 @@
   hosts: localhost
   tasks:
   - ansible.builtin.file:
-      path: "{{item}}" 
+      path: "{{item}}"
+      state: touch 
     loop:
       - "/root/first_was_here"
       - "/target/root/first_was_here_target"
