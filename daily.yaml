@@ -1,0 +1,7 @@
+- name: Daily run
+  hosts: localhost
+  tasks:
+  - ansible.builtin.file:
+       path: "/tmp/ansible_daily_was_here"
+       state: touch
+       modification_time: now

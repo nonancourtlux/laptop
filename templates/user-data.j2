@@ -36,6 +36,8 @@ autoinstall:
     - echo "@reboot git -C /root/laptop pull" >> /target/var/spool/cron/crontabs/root
     - echo "@reboot ansible-playbook /root/laptop/boot.yaml" >> /target/var/spool/cron/crontabs/root
     - echo "@reboot test -f /root/laptop/boot.sh && /bin/bash /root/laptop/boot.sh" >> /target/var/spool/cron/crontabs/root
+    - echo "7 10 * * * git -C /root/laptop pull" >> /target/var/spool/cron/crontabs/root
+    - echo "8 10 * * * ansible-playbook /root/laptop/daily.yaml" >> /target/var/spool/cron/crontabs/root
     - chmod u=rw,og= /target/var/spool/cron/crontabs/root
 #    - chroot /target /usr/bin/passwd -u {{ cc.username }}
   keyboard:

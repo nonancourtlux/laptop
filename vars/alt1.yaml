@@ -1,6 +1,6 @@
 cc:
  wif: ""
  layout: "fr"
- level: 0 
- hostname: nowifi
- hostnamexp: nowifi   
+ level: 0
+# hostname: nowifi
+# hostnamexp: nowifi

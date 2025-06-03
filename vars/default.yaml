@@ -11,6 +11,7 @@ cc:
  secrets: vars/secrets.yaml
  issue: 'Ubuntu $ISO\nIP - $(hostname -I)'
  hostnamexp: 'ubuntu-host-$(openssl rand -hex 3)'
+ hostnamexp: 'ccl-$(dmidecode -s chassis-serial-number)'
  username: 'codeclub'
  git: https://github.com/nonancourtlux/laptop.git
  url: https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-desktop-amd64.iso
