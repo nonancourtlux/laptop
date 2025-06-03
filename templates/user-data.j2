@@ -1,28 +1,23 @@
 #cloud-config
-# cloud-init directives may optionally be specified here.
-# These directives affect the ephemeral system performing the installation.
-#runcmd:
-#  - [eval, 'echo $(cat /proc/cmdline) "autoinstall" > /root/cmdline']
-#  - [eval, 'mount -n --bind -o ro /root/cmdline /proc/cmdline']
-#  - [eval, 'snap restart subiquity.subiquity-server']
-#  - [eval, 'snap restart subiquity.subiquity-service']
+runcmd:
+  - [eval, 'echo $(cat /proc/cmdline) "autoinstall" > /root/cmdline']
+  - [eval, 'mount -n --bind -o ro /root/cmdline /proc/cmdline']
+  - [eval, 'snap restart subiquity.subiquity-server']
+  - [eval, 'snap restart subiquity.subiquity-service']
+  - [eval, 'sleep 30']
 autoinstall:
     # autoinstall directives must be specified here, not directly at the
     # top level.  These directives are processed by the Ubuntu Installer,
     # and configure the target system to be installed.
     # https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html
   version: 1
+{% if cc.level < 2 %}
   locale: "{{ cc.locale | default('en_US.UTF-8')}}"
 {% if cc.sections is defined and cc.sections|length > 0 %}  interactive-sections:
 {% for value in cc.sections %}
           - "{{ value }}"
 {% endfor %}
 {% endif %}
-  identity:
-    realname: "{{ cc.realname | default('Code Club Luxembourg')}}"
-    hostname: ubuntu 
-    username: "{{ cc.username | default('ubuntu')}}"
-    password: "{{ cc.hash }}"
   ssh:
     install-server: true
     allow-pw: true
@@ -33,14 +28,21 @@ autoinstall:
 {% endif %}
   # "[late-commands] are run in the installer environment with the installed system mounted at /target."
   late-commands:
-    - echo "{{ cc.hostname }}" > /target/etc/hostname
-    - mkdir -p /targe/root/laptop 
+    - echo "{{ cc.hostnamexp | default(cc.hostname) | default('ubuntu') }}" > /target/etc/hostname
+    - mkdir -p /targe/root/laptop
     - echo "@reboot git clone {{ cc.git }} /root/laptop" >> /target/var/spool/cron/crontabs/root
     - echo "@reboot ansible-playbook /root/laptop/boot.yaml" >> /target/var/spool/cron/crontabs/root
     - echo "@reboot test -f /root/laptop/boot.sh && /bin/bash /root/laptop/boot.sh" >> /target/var/spool/cron/crontabs/root
-    - chroot /target /usr/bin/passwd -u {{ cc.username }} 
+    - chroot /target /usr/bin/passwd -u {{ cc.username }}
   keyboard:
    layout: "{{ cc.keyboard | default('ch') }}"
+{% endif %}
+  identity:
+    realname: "{{ cc.realname | default('Code Club Luxembourg')}}"
+    hostname: "{{ cc.hostname | default('ubuntu')}}" 
+    username: "{{ cc.username | default('ubuntu')}}"
+    password: "{{ cc.hash }}"
+{% if cc.level < 1 %}
   user-data:
         # cloud-init directives may also be optionally be specified here.
         # These directives also affect the target system to be installed,
@@ -70,6 +72,8 @@ autoinstall:
 #{% for value in cc.ssh_authorized_keys %}
 #          - "{{ value }}"
 #{% endfor %}
+{% endif %}
+{% if cc.level < 3 %}
   # shutdown after first host initial provisioning
   shutdown: reboot 
   network:
@@ -78,7 +82,7 @@ autoinstall:
     ethernets:
       {{ cc.if }}:
         dhcp4: true
-    wifis: # if error run sudo netplan try
+{% if cc.wif is defined and cc.wif|length > 0 and cc.accesspoints is defined and cc.accesspoints|length  > 0 %}    wifis: # if error run sudo netplan try
       {{ cc.wif }}:
         dhcp4: true
         access-points:
@@ -86,5 +90,8 @@ autoinstall:
          "{{ key }}":
           password: "{{ value["password"] }}" 
 {% endfor %}
+{% endif %}
+{% endif %}
+
 
 

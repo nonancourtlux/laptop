@@ -4,20 +4,15 @@
    - vars/default.yaml 
   tasks:
   - name: Load a variable file based on the OS type, or a default if not found. Using free-form to specify the file.
-    ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', params) }}"
-    vars:
-      params:
-       files:
-        - '{{ansible_distribution}}.yaml'
-        - '{{ansible_os_family}}.yaml'
-        - default.yaml
-       paths:
-        - 'vars'
-     
+    ansible.builtin.include_vars:
+     name: cc_override
+     files_matching: "{{alt | default('default.yaml')}}"
+     dir: vars 
   - ansible.builtin.set_fact:
      cc_secrets: "{{ lookup('ansible.builtin.file', cc.secrets) | from_yaml  }}"
+  
   - ansible.builtin.set_fact:
-     cc: "{{ cc | ansible.builtin.combine(cc_secrets.cc,recursive=true) }}"
+     cc: "{{ cc | ansible.builtin.combine(cc_secrets.cc,recursive=true) | ansible.builtin.combine(cc_override.cc,recursive=true) }}"
  
   - ansible.builtin.set_fact:
      cc_hash: "{{ lookup('ansible.builtin.pipe', 'mkpasswd -m yescrypt -s  '+cc.unixadmin) }}"  
@@ -48,10 +43,16 @@
   - ansible.builtin.copy:
       src: files/signatures
       dest: "{{ cc.cidatadir }}/signatures"
-
   - debug:
       msg:
+       - "Check file : cat {{ cc.cidatadir }}/user-data" 
        - "Insert a small usb and run {{ cc.cidatadir }}/nocloud-usb.sh"
        - "Insert a larger usb and run {{ cc.cidatadir }}/media-usb.sh"
 
+  - name: "Burning nocloud stuff to {{ cc.dev }}"
+    ansible.builtin.script: 
+     cmd: "{{ cc.cidatadir }}/nocloud-usb.sh -f"
+    args:
+      executable: "/bin/bash" 
 
+    

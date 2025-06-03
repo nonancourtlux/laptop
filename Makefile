@@ -5,6 +5,10 @@ LIST:=usb-creator-gtk cloud-image-utils gnome-disk-utility whois ansible-core gi
 master: packages pull
 	ansible-playbook master.yaml
 
+alt%: packages pull
+	ansible-playbook -e alt=$@.yaml master.yaml
+
+
 pull:
 	@git pull
 

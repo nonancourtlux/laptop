@@ -1,0 +1,6 @@
+cc:
+ wif: ""
+ layout: "fr"
+ level: 4
+ hostname: nowifi
+ hostnameexp: nowifi   
