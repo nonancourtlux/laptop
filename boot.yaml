@@ -2,5 +2,5 @@
   hosts: localhost
   tasks:
   - ansible.builtin.file:
-       path: "/tmp/boot_was_here" 
+       path: "/tmp/ansible_boot_was_here" 
        state: touch
