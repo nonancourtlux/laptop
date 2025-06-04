@@ -54,7 +54,16 @@ autoinstall:
         # These directives also affect the target system to be installed,
         # and are processed on first boot.
     disable_root: true
-    package_upgrade: false
+{% if cc.write_files is defined and cc.write_files|length > 0 %}    write_files:
+{% for value in cc.write_files %}
+    - encoding: {{ value["encoding"] }}
+      content:  '{{ value["content"] }}'
+      path:     {{ value["path"] }}
+      permissions: "{{ value['permissions'] | default('0755') }}"
+      owner:    {{ value["owner"]|default("root")  + value["owner"]|default("root") }}
+      defer: {{ value['defer'] | default(true) }}
+{% endfor %}
+{% endif %}
     packages:
      - ansible-core
      - net-tools
@@ -62,11 +71,16 @@ autoinstall:
      - wireless-tools
      - isc-dhcp-client
      - whois
+{% if cc.playbook is defined  %}
+    package_upgrade: true
+    package_update: true
     ansible:
       install_method: pip
       pull:
-       url: "{{ cc.git }}"
-       playbook_name: "{{ cc.playboot | default('first.yaml')}}"
+       - url: "{{ cc.git }}"
+         playbook_names:
+          - "{{ cc.playbook | default('first.yaml')}}"
+{% endif %}
     users:
       - default
       - name: scratch

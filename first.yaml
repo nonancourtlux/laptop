@@ -5,7 +5,7 @@
       path: "{{item}}"
       state: touch 
     loop:
-      - "/root/first_was_here"
-      - "/target/root/first_was_here_target"
+      - "/root/first_was_here_2"
+      - "/target/root/first_was_here_target_1"
     ignore_errors: true
 

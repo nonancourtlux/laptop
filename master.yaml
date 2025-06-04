@@ -20,6 +20,20 @@
   - ansible.builtin.set_fact:
      cc: "{{ cc | ansible.builtin.combine({'hash':cc_hash,'hashu':cc_hashu}) }}"
   
+  - ansible.builtin.set_fact:
+     write_files: "{{ write_files|default([]) + [{'encoding' : 'b64' , 'path' : item.path , 'content': lookup('ansible.builtin.file', item.src) | b64encode }] }}"
+    loop:
+      - { path: '/root/boot.sh' , src: "boot.sh" }
+      - { path: '/root/signatures' , src: "signatures" }
+  - debug:
+     msg: "{{ write_files }}"
+
+
+  - ansible.builtin.set_fact:
+     cc: "{{ cc | ansible.builtin.combine({'write_files': write_files}) }}"
+    when:
+     - write_files is defined
+
   - ansible.builtin.file:
        path: "{{ cc.cidatadir }}"
        state: directory
@@ -34,6 +48,13 @@
      - "network-config"
      - "nocloud-usb.sh"
      - "media-usb.sh"
+
+
+
+
+
+
+
   - ansible.builtin.file:
        path: "{{ cc.cidatadir }}/{{ item }}"
        mode: '0755'

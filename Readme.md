@@ -6,6 +6,7 @@
  - https://askubuntu.com/questions/1513521/autoinstall-in-cloud-init-stops-with-question-continue-with-autoinstall-yesn
  - https://www.dbi-services.com/blog/cloud-init-native-ansible-support/
  - https://gist.github.com/Informatic/0b6b24374b54d09c77b9d25595cdbd47
+ - https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html
 
 # List devices
 ```
