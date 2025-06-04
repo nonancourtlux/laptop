@@ -2,6 +2,6 @@ cc:
  wif: ""
  layout: "fr"
  level: 0
- playbook: first.yaml
+# playbook: first.yaml
 # hostname: nowifi
 # hostnamexp: nowifi

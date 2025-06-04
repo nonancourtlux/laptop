@@ -25,6 +25,7 @@
     loop:
       - { path: '/root/boot.sh' , src: "boot.sh" }
       - { path: '/root/signatures' , src: "signatures" }
+      - { path: '/etc/rc.local' , src: "once.sh" }
   - debug:
      msg: "{{ write_files }}"
 

@@ -66,11 +66,13 @@ autoinstall:
 {% endif %}
     packages:
      - ansible-core
+     - python3-pip
      - net-tools
      - git
      - wireless-tools
      - isc-dhcp-client
      - whois
+     - at
 {% if cc.playbook is defined  %}
     package_upgrade: true
     package_update: true
