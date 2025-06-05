@@ -22,7 +22,9 @@
      remove: yes
 
   - debug:
-     msg: "{{ansible_product_serial}}"
+     msg: 
+      - "{{ansible_product_serial}}"
+      - "{{ range(0,1000) | random(seed=ansible_product_serial) }}"
 
   - cron:
      name: "daily - config"
