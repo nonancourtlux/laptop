@@ -20,9 +20,12 @@
      name: ubuntu
      state: absent
      remove: yes
+
   - debug:
-     msg: "{{ansible_facts.ansible_product_serial}}"
+     msg: "{{ansible_product_serial}}"
+
   - cron:
+     name: "daily - config"
      job: test -f {{ cc.cloud_init_shell }} && flock -x  /tmp/robot /bin/bash  {{ cc.cloud_init_shell }}
      hour: 10
-     minute: "{{ range(0,60) | random(seed=ansible_facts.ansible_product_serial) }}"
+     minute: "{{ range(0,60) | random(seed=ansible_product_serial) }}"
