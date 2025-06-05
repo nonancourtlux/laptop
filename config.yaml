@@ -21,13 +21,29 @@
      state: absent
      remove: yes
 
+  - set_fact:
+     myhostname: "{{ 'cc-%03d' | format(range(0,999) | random(seed=ansible_product_serial))  }}"
+
   - debug:
      msg: 
       - "{{ansible_product_serial}}"
       - "{{ range(0,1000) | random(seed=ansible_product_serial) }}"
+      - "{{myhostname}}"
 
   - cron:
      name: "daily - config"
      job: test -f {{ cc.cloud_init_shell }} && flock -x  /tmp/robot /bin/bash  {{ cc.cloud_init_shell }}
      hour: 10
      minute: "{{ range(0,60) | random(seed=ansible_product_serial) }}"
+
+  - name: Set a hostname specifying strategy
+    ansible.builtin.hostname:
+     name: "{{ myhostname }}"
+    notify:
+        - reboot
+
+
+  handlers:
+    - name: reboot
+      ansible.builtin.command:
+        cmd: /usr/sbin/reboot
