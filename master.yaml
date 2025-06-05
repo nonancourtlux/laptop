@@ -20,12 +20,18 @@
   - ansible.builtin.set_fact:
      cc: "{{ cc | ansible.builtin.combine({'hash':cc_hash,'hashu':cc_hashu}) }}"
   
-  - ansible.builtin.set_fact:
-     write_files: "{{ write_files|default([]) + [{'encoding' : 'b64' , 'path' : item.path , 'content': lookup('ansible.builtin.file', item.src) | b64encode }] }}"
+  - ansible.builtin.template:
+       src: "templates/{{ item }}.j2"
+       dest: "{{ cc.cidatadir }}/{{ item }}"
     loop:
-      - { path: '/etc/rc.local' , src: "once.sh" , defer: false }
-      - { path: '/root/bootd.sh' , src: "boot.sh" }
-      - { path: '/root/signatures' , src: "signatures" }
+     - "cloud-init.sh"
+     - "root"
+
+  - ansible.builtin.set_fact:
+     write_files: "{{ write_files|default([]) + [{'encoding' : 'b64' , 'path' : item.path , 'content': lookup('ansible.builtin.file', item.src) | b64encode  ,'permissions' : item.permissions | default('0755')  , 'defer' : item.defer | default(true)  , 'owner' : item.owner | default('root') } ]}}"
+    loop:
+      - { path: "{{ cc.cloud_init_shell }}" , src: "{{cc.cidatadir}}/cloud-init.sh"  }
+      - { path: '/var/spool/cron/crontabs/root' , src: "{{cc.cidatadir}}/root" , permissions: "0600" }
 
   - debug:
      msg: "{{ write_files }}"
@@ -47,7 +53,6 @@
     loop:
      - "user-data"
      - "meta-data"
-     - "network-config"
      - "nocloud-usb.sh"
      - "media-usb.sh"
 

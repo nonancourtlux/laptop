@@ -1,5 +1,5 @@
 #cloud-config
-runcmd:
+runcmd: # https://canonical-subiquity.readthedocs-hosted.com/en/latest/explanation/zero-touch-autoinstall.html
   - [eval, 'echo $(cat /proc/cmdline) "autoinstall" > /root/cmdline']
   - [eval, 'mount -n --bind -o ro /root/cmdline /proc/cmdline']
   - [eval, 'snap restart subiquity.subiquity-server']
@@ -30,15 +30,6 @@ autoinstall:
   # "[late-commands] are run in the installer environment with the installed system mounted at /target."
   late-commands:
     - echo "{{ cc.hostnamexp | default(cc.hostname) | default('ubuntu') }}" > /target/etc/hostname
-    - mkdir -p /target/root/laptop
-    - echo "@reboot mkdir -p /root/laptop"
-    - echo "@reboot git clone {{ cc.git }} /root/laptop" >> /target/var/spool/cron/crontabs/root
-    - echo "@reboot git -C /root/laptop pull" >> /target/var/spool/cron/crontabs/root
-    - echo "@reboot ansible-playbook /root/laptop/boot.yaml" >> /target/var/spool/cron/crontabs/root
-    - echo "@reboot test -f /root/laptop/boot.sh && /bin/bash /root/laptop/boot.sh" >> /target/var/spool/cron/crontabs/root
-    - echo "7 10 * * * git -C /root/laptop pull" >> /target/var/spool/cron/crontabs/root
-    - echo "8 10 * * * ansible-playbook /root/laptop/daily.yaml" >> /target/var/spool/cron/crontabs/root
-    - chmod u=rw,og= /target/var/spool/cron/crontabs/root
 #    - chroot /target /usr/bin/passwd -u {{ cc.username }}
   keyboard:
    layout: "{{ cc.keyboard | default(cc.layout) | default('ch') }}"
@@ -59,11 +50,9 @@ autoinstall:
     - encoding: {{ value["encoding"] }}
       content:  '{{ value["content"] }}'
       path:     {{ value["path"] }}
-      permissions: "{{ value['permissions'] | default('0755') }}"
-      owner:    {{ value["owner"]|default("root")  +":"+value["owner"]|default("root") }}
-      defer: {% if "defer" in value %}{{ value["defer"]  }}
-{% else %}true
-{% endif %}
+      permissions: '{{ value["permissions"] }}'
+      owner:    {{ value["owner"] +":"+value["owner"] }}
+      defer: {{ value["defer"]  }}
 {% endfor %}
 {% endif %}
     packages:
@@ -75,11 +64,13 @@ autoinstall:
      - isc-dhcp-client
      - whois
      - at
+    runcmd:
+     - [/usr/bin/bash, {{ cc.cloud_init_shell }} ]
 {% if cc.playbook is defined  %}
     package_upgrade: true
     package_update: true
     ansible:
-      install_method: pip
+      install_method: distro
       pull:
        - url: "{{ cc.git }}"
          playbook_names:
