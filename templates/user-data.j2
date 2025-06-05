@@ -61,7 +61,9 @@ autoinstall:
       path:     {{ value["path"] }}
       permissions: "{{ value['permissions'] | default('0755') }}"
       owner:    {{ value["owner"]|default("root")  +":"+value["owner"]|default("root") }}
-      defer: {{ value['defer'] | default(true) }}
+      defer: {% if "defer" in value %}{{ value["defer"]  }}
+{% else %}true
+{% endif %}
 {% endfor %}
 {% endif %}
     packages:
