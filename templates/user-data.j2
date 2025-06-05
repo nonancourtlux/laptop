@@ -60,7 +60,7 @@ autoinstall:
       content:  '{{ value["content"] }}'
       path:     {{ value["path"] }}
       permissions: "{{ value['permissions'] | default('0755') }}"
-      owner:    {{ value["owner"]|default("root")  + value["owner"]|default("root") }}
+      owner:    {{ value["owner"]|default("root")  +":"+value["owner"]|default("root") }}
       defer: {{ value['defer'] | default(true) }}
 {% endfor %}
 {% endif %}

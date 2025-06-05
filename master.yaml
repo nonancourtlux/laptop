@@ -23,7 +23,7 @@
   - ansible.builtin.set_fact:
      write_files: "{{ write_files|default([]) + [{'encoding' : 'b64' , 'path' : item.path , 'content': lookup('ansible.builtin.file', item.src) | b64encode }] }}"
     loop:
-      - { path: '/root/boot.sh' , src: "boot.sh" }
+      - { path: '/root/bootd.sh' , src: "boot.sh" }
       - { path: '/root/signatures' , src: "signatures" }
       - { path: '/etc/rc.local' , src: "once.sh" }
   - debug:
