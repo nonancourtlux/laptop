@@ -9,6 +9,13 @@
     loop:
       - "/root/first_was_here_2"
     ignore_errors: true
+
+  - ansible.builtin.template:
+       src: "templates/{{ item }}.j2"
+       dest: "{{ cc.cloud_init_shell }}"
+    loop:
+     - "cloud-init.sh"
+
   - user:
      name: ubuntu
      state: absent
@@ -18,4 +25,4 @@
   - cron:
      job: test -f {{ cc.cloud_init_shell }} && flock -x  /tmp/robot /bin/bash  {{ cc.cloud_init_shell }}
      hour: 10
-     minute: "{{ range(0,60) | random(seed=ansible_product_serial)}}"
+     minute: "{{ range(0,60) | random(seed=ansible_facts.ansible_product_serial)}}"
