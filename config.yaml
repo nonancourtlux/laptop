@@ -36,13 +36,17 @@
      hour: 10
      minute: "{{ range(0,60) | random(seed=ansible_product_serial) }}"
 
-  - name: Set a hostname specifying strategy
+  - name: "Set a hostname to {{myhostname}}"
     ansible.builtin.hostname:
      name: "{{ myhostname }}"
     notify:
         - reboot
-
-
+  - ansible.builtin.user:
+     name: "{{cc.username}}"
+     comment: "{{cc.username}}@{{myhostname}}"
+    notify:
+        - reboot
+ 
   handlers:
     - name: reboot
       ansible.builtin.command:
