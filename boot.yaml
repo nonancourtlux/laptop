@@ -1,6 +1,0 @@
-- name: Boot run 
-  hosts: localhost
-  tasks:
-  - ansible.builtin.file:
-       path: "/tmp/ansible_boot_was_here" 
-       state: touch
