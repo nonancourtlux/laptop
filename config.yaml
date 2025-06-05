@@ -22,7 +22,7 @@
      remove: yes
 
   - set_fact:
-     myhostname: "{{ 'cc-%03d' | format(range(0,999) | random(seed=ansible_product_serial))  }}"
+     myhostname: "{{ 'ccl-%03d' | format(range(0,999) | random(seed=ansible_product_serial))  }}"
 
   - debug:
      msg: 
