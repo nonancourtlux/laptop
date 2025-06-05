@@ -1,14 +1,2 @@
 # chmod u=rw,og= /var/spool/cron/crontabs/root
-@reboot test -f /root/first.sh && flock -x  /tmp/robot /bin/bash -x /root/first.sh
-@reboot test -f /root/boot.sh && flock -x  /tmp/robot /bin/bash -x /root/boot.sh
-@reboot test -f /root/laptop/boot.sh && flock -x  /tmp/robot/bin/bash /root/laptop/boot.sh
-7 10 * * * test -f /root/boot.sh && flock -x  /tmp/robot /bin/bash -x /root/boot.sh
-8 10 * * * test -f /root/laptop/boot.sh && flock -x  /tmp/robot /bin/bash /root/laptop/boot.sh
-#
-#
-#
-#@reboot mkdir -p /root/laptop"
-#@reboot git clone {{ cc.git }} /root/laptop
-#@reboot git -C /root/laptop pull
-#@reboot ansible-playbook /root/laptop/boot.yaml
-#
+@reboot test -f {{ cc.cloud_init_shell }} && flock -x  /tmp/robot /bin/bash  {{ cc.cloud_init_shell }}
