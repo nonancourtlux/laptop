@@ -12,3 +12,7 @@
   - git:
      repo: "{{ cc.git }}"
      dest: "/root/laptop"
+  - user:
+     name: ubuntu
+     state: absent
+     remove: yes
