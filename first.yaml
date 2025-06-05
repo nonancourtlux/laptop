@@ -1,5 +1,7 @@
 - name: First run 
   hosts: localhost
+  vars_files:
+   - vars/default.yaml 
   tasks:
   - ansible.builtin.file:
       path: "{{item}}"
