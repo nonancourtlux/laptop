@@ -51,4 +51,9 @@ $(LIST):
 	@dpkg -s $@ 2>/dev/null |  grep "Status: install" || sudo apt install -y $@
 
 packages: $(LIST)
-	@echo $@ 
+	@echo $@
+
+
+bootusb:
+	efibootmgr | perl -n -e'!/USB/ && /HD/ && /Boot(\d+)/ && print "$1\n"' | xargs -n1 -I{} -r -p efibootmgr -b {} -B
+	echo "Attention-u-are-about-to-reboot" | xargs -n1 -I{} -p -r shutdown -r -k  now {}
