@@ -1,14 +1,23 @@
 - name: First run 
   hosts: localhost
   vars_files:
-   - vars/default.yaml 
+   - vars/default.yaml
   tasks:
   - set_fact:
-     myserialhash: "{{ansible_product_serial | hash('sha1')}}"
+     myserialhash: "{{ansible_product_serial | hash('sha256')}}"
+  
   - debug:
-      msg:
+      msg: # 
        - "My serial {{ansible_product_serial}}"
        - "My Serail Hash {{myserialhash}}"
+
+  - ansible.builtin.set_fact:
+     cc_secrets: "{{ lookup('ansible.builtin.file', '/root/secrets.yaml') | from_yaml  }}"
+    
+  - ansible.builtin.set_fact:
+     cc: "{{ cc | ansible.builtin.combine(cc_secrets.cc,recursive=true)}}"
+
+    
   - ansible.builtin.file:
       path: "{{item}}"
       state: touch 
@@ -27,14 +36,38 @@
      state: absent
      remove: yes
 
+
   - set_fact:
-     myhostname: "{{ 'ccl-%03d' | format(range(0,999) | random(seed=ansible_product_serial))  }}"
+     myhostname: "{{ cc.rename[ansible_product_serial] }}"
+    when:
+     - cc.rename is defined
+     - ansible_product_serial in cc.rename.keys()
+     - myhostname is not defined
+
+  - set_fact:
+     myhostname: "{{ cc.rename[myserialhash] }}"
+    when:
+     - cc.rename is defined
+     - myserialhash in cc.rename.keys()
+     - myhostname is not defined
+
+  - debug:
+     msg: 
+      - "{{ansible_product_serial}}"
+      - "{{ range(0,1000) | random(seed=ansible_product_serial) }}"
+      - "{{cc.rename}}"
+  - set_fact:
+     myhostname: "{{ myhostname | default('ccl-%03d' | format(range(0,999) | random(seed=ansible_product_serial)))  }}"
+    when:
+     - myhostname is not defined
+
 
   - debug:
      msg: 
       - "{{ansible_product_serial}}"
       - "{{ range(0,1000) | random(seed=ansible_product_serial) }}"
       - "{{myhostname}}"
+      - "{{cc.rename}}"
 
   - cron:
      name: "daily - config"

@@ -19,7 +19,6 @@
     when:
      - feedsecret.changed
 
-
   - ansible.builtin.set_fact:
      cc_secrets: "{{ lookup('ansible.builtin.file', cc.secrets) | from_yaml  }}"
   
