@@ -1,4 +1,4 @@
-LIST:=usb-creator-gtk cloud-image-utils gnome-disk-utility whois ansible-core git
+LIST:=usb-creator-gtk cloud-image-utils gnome-disk-utility whois ansible-core git efibootmgr
 
 OPTS:= --diff
 
@@ -54,6 +54,6 @@ packages: $(LIST)
 	@echo $@
 
 
-bootusb:
-	efibootmgr | perl -n -e'!/USB/ && /HD/ && /Boot(\d+)/ && print "$1\n"' | xargs  -I{} -r -p efibootmgr -b {} -B
-	echo "Attention-u-are-about-to-reboot" | xargs  -I{} -p -r shutdown -r   now {}
+bootusb: packages # PXE may fail - USB will follow
+	@efibootmgr | perl -n -e'!/USB/ && /HD/ && /Boot(\d+)/ && print "$1\n"' | xargs  -I{} -r -p efibootmgr -b {} -B
+	@echo "Attention-u-are-about-to-reboot-4-reinstall" | xargs  -I{} -p -r shutdown -r   now {}
