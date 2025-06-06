@@ -10,13 +10,17 @@
       msg: # 
        - "My serial {{ansible_product_serial}}"
        - "My Serail Hash {{myserialhash}}"
+       - "Default hostname would be {{ range(0,1000) | random(seed=ansible_product_serial) }}"
 
   - ansible.builtin.set_fact:
      cc_secrets: "{{ lookup('ansible.builtin.file', '/root/secrets.yaml') | from_yaml  }}"
-    
+    when:
+     - ansible_user_id == "root"
+
   - ansible.builtin.set_fact:
      cc: "{{ cc | ansible.builtin.combine(cc_secrets.cc,recursive=true)}}"
-
+    when:
+     - cc_secrets is defined
     
   - ansible.builtin.file:
       path: "{{item}}"
@@ -30,7 +34,8 @@
        dest: "{{ cc.cloud_init_shell }}"
     loop:
      - "cloud-init.sh"
-
+    when:
+     - ansible_user_id == "root"
   - user:
      name: ubuntu
      state: absent
@@ -51,23 +56,12 @@
      - myserialhash in cc.rename.keys()
      - myhostname is not defined
 
-  - debug:
-     msg: 
-      - "{{ansible_product_serial}}"
-      - "{{ range(0,1000) | random(seed=ansible_product_serial) }}"
-      - "{{cc.rename}}"
+
   - set_fact:
      myhostname: "{{ myhostname | default('ccl-%03d' | format(range(0,999) | random(seed=ansible_product_serial)))  }}"
     when:
      - myhostname is not defined
 
-
-  - debug:
-     msg: 
-      - "{{ansible_product_serial}}"
-      - "{{ range(0,1000) | random(seed=ansible_product_serial) }}"
-      - "{{myhostname}}"
-      - "{{cc.rename}}"
 
   - cron:
      name: "daily - config"
@@ -85,6 +79,17 @@
      comment: "{{cc.username}}@{{myhostname}}"
     notify:
         - reboot
+
+# Firefox business
+  - name: Ensure target directories exist
+    ansible.builtin.file:
+     dest: "{{ item }}"
+     state: directory
+     mode: '0755'
+    loop:
+    - "{{ cc.fxext_dl_repo }}"
+    - "{{ cc.fxpolicies_path | dirname }}"
+
  
   handlers:
     - name: reboot

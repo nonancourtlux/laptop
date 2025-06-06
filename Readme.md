@@ -1,5 +1,16 @@
 
+# Make iso
+Prepare two usb  keys
+```
+# Run once to pre-populate vars/secrets.yaml
+# And again after review/adaptation of vars/secrets.yaml
+make iso
+```
 
+
+
+
+# 
 
 # References
  - https://www.jimangel.io/posts/automate-ubuntu-22-04-lts-bare-metal/
@@ -12,8 +23,9 @@
 ```
 ls /sys/class/net
 iwlist wlp3s0 scan | grep  ESSID
-
 ```
+
+
 
 
 

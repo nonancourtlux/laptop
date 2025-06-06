@@ -17,7 +17,6 @@ cc:
  username: 'codeclub'
  git: https://github.com/nonancourtlux/laptop.git
  url: https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-desktop-amd64.iso
- #url: https://releases.ubuntu.com/25.04/ubuntu-25.04-desktop-amd64.iso 
 
 
 # https://cdimage.ubuntu.com/ubuntu-mini-iso/noble/daily-live/20250529/noble-mini-iso-amd64.iso
@@ -26,3 +25,5 @@ cc:
 # http://ftp.free.fr/mirrors/ftp.xubuntu.com/releases/24.04/release/xubuntu-24.04.2-minimal-amd64.iso
 # https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-desktop-amd64.iso
 # https://releases.ubuntu.com/25.04/ubuntu-25.04-desktop-amd64.iso 
+
+
