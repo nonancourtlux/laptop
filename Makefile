@@ -56,4 +56,4 @@ packages: $(LIST)
 
 bootusb:
 	efibootmgr | perl -n -e'!/USB/ && /HD/ && /Boot(\d+)/ && print "$1\n"' | xargs  -I{} -r -p efibootmgr -b {} -B
-	echo "Attention-u-are-about-to-reboot" | xargs  -I{} -p -r shutdown -r -k  now {}
+	echo "Attention-u-are-about-to-reboot" | xargs  -I{} -p -r shutdown -r   now {}
