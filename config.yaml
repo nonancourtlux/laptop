@@ -12,15 +12,25 @@
        - "My Serail Hash {{myserialhash}}"
        - "Default hostname would be {{ range(0,1000) | random(seed=ansible_product_serial) }}"
 
+
   - ansible.builtin.set_fact:
      cc_secrets: "{{ lookup('ansible.builtin.file', '/root/secrets.yaml') | from_yaml  }}"
     when:
      - ansible_user_id == "root"
 
   - ansible.builtin.set_fact:
+     cc_secrets: "{{ lookup('ansible.builtin.file', 'vars/secrets.yaml') | from_yaml  }}"
+    when:
+     - not ansible_user_id == "root"
+
+  - ansible.builtin.set_fact:
      cc: "{{ cc | ansible.builtin.combine(cc_secrets.cc,recursive=true)}}"
     when:
      - cc_secrets is defined
+
+  - debug:
+     msg:
+      - "{{cc}}"
     
   - ansible.builtin.file:
       path: "{{item}}"
@@ -40,6 +50,7 @@
      name: ubuntu
      state: absent
      remove: yes
+
 
 
   - set_fact:
