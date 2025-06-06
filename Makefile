@@ -28,7 +28,7 @@ alt%: packages pull
 	-@echo "/tmp/media-usb.sh" | xargs -r -n1 -p bash
 
 
-view check:
+view check: pull
 	-ansible-playbook $(OPTS) config.yaml
 
 subiquity:
@@ -55,5 +55,5 @@ packages: $(LIST)
 
 
 bootusb:
-	efibootmgr | perl -n -e'!/USB/ && /HD/ && /Boot(\d+)/ && print "$1\n"' | xargs -n1 -I{} -r -p efibootmgr -b {} -B
-	echo "Attention-u-are-about-to-reboot" | xargs -n1 -I{} -p -r shutdown -r -k  now {}
+	efibootmgr | perl -n -e'!/USB/ && /HD/ && /Boot(\d+)/ && print "$1\n"' | xargs  -I{} -r -p efibootmgr -b {} -B
+	echo "Attention-u-are-about-to-reboot" | xargs  -I{} -p -r shutdown -r -k  now {}
