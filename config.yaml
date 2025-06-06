@@ -80,17 +80,8 @@
     notify:
         - reboot
 
-# Firefox business
-  - name: Ensure target directories exist
-    ansible.builtin.file:
-     dest: "{{ item }}"
-     state: directory
-     mode: '0755'
-    loop:
-    - "{{ cc.fxext_dl_repo }}"
-    - "{{ cc.fxpolicies_path | dirname }}"
 
- 
+
   handlers:
     - name: reboot
       ansible.builtin.command:
