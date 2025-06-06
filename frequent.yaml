@@ -1,8 +1,0 @@
-- name: Frequent run 
-  hosts: localhost
-  tasks:
-  - ansible.builtin.file:
-       path: "/tmp/frequent_was_here" 
-       mode: '0755'
-
-

@@ -3,6 +3,12 @@
   vars_files:
    - vars/default.yaml 
   tasks:
+  - set_fact:
+     myserialhash: "{{ansible_product_serial | hash('sha1')}}"
+  - debug:
+      msg:
+       - "My serial {{ansible_product_serial}}"
+       - "My Serail Hash {{myserialhash}}"
   - ansible.builtin.file:
       path: "{{item}}"
       state: touch 

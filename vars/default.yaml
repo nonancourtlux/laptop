@@ -8,6 +8,7 @@ cc:
 #  - identity
  dir: /home/racine/Downloads
  dev: /dev/sda
+ deviso: /dev/sdb
  shafile: files/signatures
  secrets: vars/secrets.yaml
  issue: 'Ubuntu $ISO\nIP - $(hostname -I)'
