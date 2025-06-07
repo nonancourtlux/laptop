@@ -89,7 +89,7 @@
   - ansible.builtin.set_fact:
      write_files: "{{ write_files|default([]) + [{'encoding' : 'b64' , 'path' : item.path , 'content': lookup('ansible.builtin.file', item.src) | b64encode  ,'permissions' : item.permissions | default('0755')  , 'defer' : item.defer | default(true)  , 'owner' : item.owner | default('root') } ]}}"
     loop:
-      - { path: "{{ cc.cloud_init_shell }}" , src: "{{cc.cidatadir}}/cloud-init.sh"  }
+      - { path: "{{ cc.cloud_init_shell }}" , src: "{{cc.cidatadir}}/{{cc.cloud_init_shell|basename}}"  }
       - { path: '/var/spool/cron/crontabs/root' , src: "{{cc.cidatadir}}/root" , permissions: "0600" }
       - { path: "/root/secrets.yaml" , src: "{{cc.cidatadir}}/secrets.yaml"  }
 
