@@ -28,7 +28,7 @@ alt%: packages pull
 	-@echo "/tmp/media-usb.sh" | xargs -r -n1 -p bash
 
 
-view check: pull
+view check config guest: pull
 	-ansible-playbook $(OPTS) config.yaml
 
 subiquity:
