@@ -46,11 +46,13 @@
 
   - set_fact:
       cc_secrets:  "{{ cc_secrets | ansible.builtin.combine({'cc':{'hash': lookup('ansible.builtin.pipe', 'mkpasswd -m yescrypt -s  '+(unixadmin.user_input|default(cc.unixadmin)|default(cc.username)))}},recursive=true) }}"
-
+    when:
+     - cc.hash   is not defined
 
   - set_fact:
       cc_secrets:  "{{ cc_secrets | ansible.builtin.combine({'cc':{'hashu':lookup('ansible.builtin.pipe', 'mkpasswd -m yescrypt -s  '+(unixuser.user_input|default(cc.unixuser)|default('scratch')))}},recursive=true) }}"
-
+    when:
+     - cc.hashu   is not defined
 
      
   - ansible.builtin.set_fact:
