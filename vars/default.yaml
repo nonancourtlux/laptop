@@ -3,7 +3,7 @@ cc:
  if: enp2s0
  wif: wlp3s0
  cidatadir: /tmp/cidata
- debug: true # will copy more data to the usb key
+ debug: false # will copy more data to the usb key
  cloud_init_shell: /root/cloud-init.sh
 # sections:  # https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html
 #  - identity
