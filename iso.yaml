@@ -14,8 +14,9 @@
       force: no
     register: feedsecret
 
-  - fail:
-     msg: "We just prefill {{ cc.secrets }}. Please update {{ cc.secrets }}"
+  - pause:
+     prompt: "We just prefill {{ cc.secrets }}. Please review {{ cc.secrets }}"
+     seconds: 10
     when:
      - feedsecret.changed
 
@@ -24,12 +25,44 @@
   
   - ansible.builtin.set_fact:
      cc: "{{ cc | ansible.builtin.combine(cc_secrets.cc,recursive=true) | ansible.builtin.combine(cc_override.cc,recursive=true) }}"
+  
+  - pause:
+        prompt: "Give admin password for {{cc.username}}"
+        echo: false
+    register: unixadmin
+    when:
+     - cc.unixadmin is not defined
+     - cc.hash   is not defined
+
+  - pause:
+        prompt: "Give admin password for scratch"
+        echo: false
+    register: unixuser
+    when:
+     - cc.unixuser is not defined
+     - cc.hashu   is not defined
+
  
+
+  - set_fact:
+      cc_secrets:  "{{ cc_secrets | ansible.builtin.combine({'cc':{'hash': lookup('ansible.builtin.pipe', 'mkpasswd -m yescrypt -s  '+(unixadmin.user_input|default(cc.unixadmin)|default(cc.username)))}},recursive=true) }}"
+
+
+  - set_fact:
+      cc_secrets:  "{{ cc_secrets | ansible.builtin.combine({'cc':{'hashu':lookup('ansible.builtin.pipe', 'mkpasswd -m yescrypt -s  '+(unixuser.user_input|default(cc.unixuser)|default('scratch')))}},recursive=true) }}"
+
+
+     
   - ansible.builtin.set_fact:
-     cc_hash: "{{ lookup('ansible.builtin.pipe', 'mkpasswd -m yescrypt -s  '+cc.unixadmin) }}"  
-     cc_hashu: "{{ lookup('ansible.builtin.pipe', 'mkpasswd -m yescrypt -s  '+cc.unixuser) }}"  
-  - ansible.builtin.set_fact:
-     cc: "{{ cc | ansible.builtin.combine({'hash':cc_hash,'hashu':cc_hashu}) }}"
+     cc: "{{ cc | ansible.builtin.combine(cc_secrets.cc,recursive=true) | ansible.builtin.combine(cc_override.cc,recursive=true) }}"
+
+  - copy:
+     content: '{{ cc_secrets | to_nice_yaml  }}'
+     dest: "{{cc.secrets}}"
+    when:
+     - (unixuser is defined or  unixadmin is defined ) 
+
+
 
   - ansible.builtin.file:
        path: "{{ cc.cidatadir }}"
