@@ -1,0 +1,10 @@
+cc:
+ wif: ""
+ layout: "fr"
+ level: 0
+ # playbook: first.yaml
+ # Jun 05 20:09:41 ubuntu subiquity_event.4702[4702]: subiquity/Userdata/load_autoinstall_data: Cloud config schema errors: autoinstall.user-data.ansible.pull: [{'playbook_names': ['first.yaml'], 'url': 'https://github.com/nonancourtlux/laptop.git'}] is not of type 'object'
+ # Jun 05 20:09:41 ubuntu subiquity_event.4702[4702]: subiquity/load_autoinstall_config: Cloud config schema errors: autoinstall.user-data.ansible.pull: [{'playbook_names': ['first.yaml'], 'url': 'https://github.com/nonancourtlux/laptop.git'}] is not of type 'object'
+# hostname: nowifi
+# hostnamexp: nowifi
+# ssh-keygen -f '/home/racine/.ssh/known_hosts' -R 'ccl-d6n0cx041000238'

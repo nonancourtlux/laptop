@@ -1,0 +1,10 @@
+#!/bin/bash
+
+
+umask 022
+mkdir -p /root/laptop
+test -d /root/laptop/.git || git clone {{ cc.git }} /root/laptop
+git -C /root/laptop pull
+ansible-playbook /root/laptop/config.yaml
+
+

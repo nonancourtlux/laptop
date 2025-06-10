@@ -1,0 +1,319 @@
+- name: First run 
+  hosts: localhost
+  vars_files:
+   - vars/default.yaml
+  tasks:
+  - set_fact:
+     myserialhash: "{{ansible_product_serial | hash('sha256')}}"
+  
+  - debug:
+      msg: # 
+       - "My serial {{ansible_product_serial}}"
+       - "My Serail Hash {{myserialhash}}"
+       - "Default hostname would be {{ range(0,1000) | random(seed=ansible_product_serial) }}"
+
+
+  - ansible.builtin.set_fact:
+     cc_secrets: "{{ lookup('ansible.builtin.file', '/root/secrets.yaml') | from_yaml  }}"
+    when:
+     - ansible_user_id == "root"
+
+  - ansible.builtin.set_fact:
+     cc_secrets: "{{ lookup('ansible.builtin.file', 'vars/secrets.yaml') | from_yaml  }}"
+    when:
+     - not ansible_user_id == "root"
+
+  - ansible.builtin.set_fact:
+     cc: "{{ cc | ansible.builtin.combine(cc_secrets.cc,recursive=true)}}"
+    when:
+     - cc_secrets is defined
+
+  - debug:
+     msg:
+      - "{{cc}}"
+    
+
+  - ansible.builtin.template:
+       src: "templates/{{ item }}.j2"
+       dest: "{{ cc.cloud_init_shell }}"
+    loop:
+     - "cloud-init.sh"
+    when:
+     - ansible_user_id == "root"
+  - user:
+     name: ubuntu
+     state: absent
+     remove: yes
+
+  - ansible.builtin.file:
+     path: /etc/sudoers.d/90-cloud-init-users
+     state: absent
+
+  - set_fact:
+     myhostname: "{{ cc.rename[ansible_product_serial] }}"
+    when:
+     - cc.rename is defined
+     - ansible_product_serial in cc.rename.keys()
+     - myhostname is not defined
+
+  - set_fact:
+     myhostname: "{{ cc.rename[myserialhash] }}"
+    when:
+     - cc.rename is defined
+     - myserialhash in cc.rename.keys()
+     - myhostname is not defined
+
+
+  - set_fact:
+     myhostname: "{{ myhostname | default('ccl-%03d' | format(range(0,999) | random(seed=ansible_product_serial)))  }}"
+    when:
+     - myhostname is not defined
+
+
+  - cron:
+     name: "daily - config"
+     job: test -f {{ cc.cloud_init_shell }} && flock -x  /tmp/robot /bin/bash  {{ cc.cloud_init_shell }}
+     hour: 10
+     minute: "{{ range(0,60) | random(seed=ansible_product_serial) }}"
+
+  - name: "Set a hostname to {{myhostname}}"
+    ansible.builtin.hostname:
+     name: "{{ myhostname }}"
+    notify:
+        - reboot
+  - ansible.builtin.user:
+     name: "{{cc.username}}"
+     comment: "{{cc.username}}@{{myhostname}}"
+    notify:
+        - reboot
+
+## Auto-Login
+  - community.general.ini_file:
+     path: /etc/gdm3/custom.conf
+     section: daemon
+     option: AutomaticLoginEnable
+     value: "true"
+     state: present
+
+  - community.general.ini_file:
+     path: /etc/gdm3/custom.conf
+     section: daemon
+     option: AutomaticLogin
+     value: "scratch"
+     state: present
+
+## Remove password
+  - ansible.builtin.command:
+     cmd: passwd -d scratch
+    when:
+     - cc.nopassword | default(false)
+     
+
+## Files:
+  - ansible.builtin.copy:
+     src: "home/"
+     dest: "/home/{{item}}"
+     group: "users"
+     owner: "{{item}}"
+    loop:
+    - "scratch"
+    #- "{{cc.username}}"
+
+## Refresh authorized key
+  - name: Set authorized key taken from file
+    ansible.posix.authorized_key:
+     user: "{{item.1}}"
+     state: present
+     key: "{{ item.0 }}"
+    with_community.general.cartesian:
+     - "{{cc.ssh_authorized_keys | default([]) }}"
+     - ["scratch","{{cc.username}}"]
+    ignore_errors: true
+
+## Motd
+  - ansible.builtin.template:
+       src: "templates/motd.j2"
+       dest: "/etc/motd"
+    when:
+     - ansible_user_id == "root"
+
+## Sudo
+  - ansible.builtin.template:
+       src: "templates/sudoer.j2"
+       dest: "{{cc.sudo.dest|default('/tmp/rubbish')}}"
+    when:
+     - ansible_user_id == "root"
+
+
+## Install packages
+  - ansible.builtin.get_url:
+     url: "https://packages.mozilla.org/apt/repo-signing-key.gpg"
+     dest: "/etc/apt/keyrings/packages.mozilla.org.asc"
+    register: signing
+    when:
+     - ansible_user_id == "root"
+
+  - ansible.builtin.copy:
+     dest: /etc/apt/preferences.d/mozilla
+     content: "Package: *
+\nPin: origin packages.mozilla.org
+\nPin-Priority: 1000
+\n" 
+
+  - ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main"
+        state: present
+    register: repo
+
+  - community.general.snap:
+     name: firefox
+     state: absent
+
+  - ansible.builtin.package:
+     name: firefox
+     state: absent
+    when:
+     - signing.changed or repo.changed
+
+## Install packages
+  - ansible.builtin.package:
+     name: "{{item}}"
+     state: latest
+    loop: "{{ cc.packages | default([]) }}"
+
+  - ansible.builtin.package:
+     name: "{{item}}"
+     state: absent
+    loop: "{{ cc.purge | default([]) }}"
+
+## Gnome settings:
+  - name: "Gnome stuff"
+    ansible.builtin.command:
+        cmd: "dbus-launch gsettings set {{item.dir}} {{item.key}} {{item.value}}" 
+    loop: "{{ cc.gnome | default([]) }}"
+
+  - name: "Gnome stuff"
+    ansible.builtin.command:
+        cmd: "dbus-launch gsettings set org.gnome.shell favorite-apps '{{cc.pin2dash|to_json}}'"
+    when:
+     - cc.pin2dash is defined
+     - cc.pin2dash | length
+    register: strange
+  - debug:
+     msg: "{{strange}}"
+
+
+  - ansible.builtin.template:
+       src: "templates/dconf.dump.j2"
+       dest: "/home/scratch/dconf.dump"
+       owner: scratch
+       group: users
+    when:
+     - ansible_user_id == "root"
+    register: dconf
+
+  - ansible.builtin.command:
+     cmd: dbus-launch dconf load /
+     stdin: "{{ lookup('ansible.builtin.template', 'templates/dconf.dump.j2') }}"
+     stdin_add_newline: true
+    become: true
+    become_user: scratch
+    when:
+     - ansible_user_id == "root"
+     - dconf.changed  
+
+## Firefox business
+
+  
+  - ansible.builtin.file:
+     path: "{{item}}"
+     state: directory
+    loop:
+     - /etc/firefox
+     - /etc/firefox/policies
+
+  - ansible.builtin.template:
+       src: "templates/policies.json.j2"
+       dest: "{{item}}"
+    loop:
+      - "/etc/firefox/policies/policies.json"
+    when:
+     - ansible_user_id == "root"
+
+
+  - community.general.ini_file:
+     path: /usr/lib/firefox/application.ini
+     section: XRE
+     option: EnableProfileMigrator=0
+     value: "0"
+     state: present
+    when:
+     - ansible_user_id == "root"
+
+  - ansible.builtin.command:
+     cmd: firefox --new-instance --headless "{{ cc.firefox.homepage }}"   -screenshot "{{ cc.firefox.homepage }}"
+    become: true
+    become_user: scratch
+
+### Logo
+ 
+  - ansible.builtin.file:
+     path: "{{cc.cache}}"
+     state: directory
+    
+  - ansible.builtin.get_url:
+     url: "{{item.src}}"
+     dest: "{{cc.cache}}/{{ (item.src+item.size)|hash('md5')}}"
+    loop: "{{cc.logo}}"
+    when:
+     - ansible_user_id == "root"
+
+  - ansible.builtin.debug:
+        msg: "convert -resize  {{item.0.size}} {{cc.cache}}/{{(item.0.src+item.0.size)|hash('md5')}} {{cc.cache}}/{{item.1|hash('md5')}}.png"
+    with_subelements:
+      - "{{cc.logo}}"
+      - dest
+    
+  - ansible.builtin.command:
+        cmd: "convert -resize  {{item.0.size}} {{cc.cache}}/{{(item.0.src+item.0.size)|hash('md5')}} {{cc.cache}}/{{item.1|hash('md5')}}.png"
+        creates: "{{cc.cache}}/{{item.1|hash('md5')}}"
+    with_subelements:
+      - "{{cc.logo}}"
+      - dest
+
+  - ansible.builtin.copy:
+        src: "{{cc.cache}}/{{item.1|hash('md5')}}.png"
+        dest: "{{item.1}}"
+    when:
+     - ansible_user_id == "root"
+
+    with_subelements:
+      - "{{cc.logo}}"
+      - dest
+    notify:
+       - update-initramfs
+  
+
+#  - name: patching
+#    ansible.builtin.command:
+#     cmd: /usr/bin/unattended-upgrade -d
+       
+  - name: Upgrade the OS (apt-get dist-upgrade)
+    ansible.builtin.apt:
+     upgrade: dist
+    notify:
+       - reboot
+
+  - name: Remove dependencies that are no longer required and purge their configuration files
+    ansible.builtin.apt:
+     autoremove: yes
+     purge: true
+
+
+  handlers:
+    - name: update-initramfs
+      ansible.builtin.command:
+        cmd: update-initramfs -u
+    - name: reboot
+      ansible.builtin.command:
+        cmd: /usr/sbin/reboot

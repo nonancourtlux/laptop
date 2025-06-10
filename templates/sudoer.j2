@@ -1,0 +1,9 @@
+
+
+{% for item in cc.sudo.cmnd | default([]) %}
+Cmnd_Alias {{ item.name }} = {{ item.members }}
+{% endfor %}
+
+{% for item in cc.sudo.privileges | default([]) %}
+{{ item.name }} {{ item.entry }}
+{% endfor %}

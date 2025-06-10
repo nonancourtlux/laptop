@@ -1,0 +1,104 @@
+cc:
+ level: 0
+ if: enp2s0
+ wif: wlp3s0
+ cidatadir: /tmp/cidata
+ debug: false # will copy more data to the usb key
+ cloud_init_shell: /root/cloud-init.sh
+# sections:  # https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html
+#  - identity
+ dir: /home/racine/Downloads
+ dev: /dev/sda
+ deviso: /dev/sdb
+ shafile: files/signatures
+ secrets: vars/secrets.yaml
+ issue: 'Ubuntu $ISO\nIP - $(hostname -I)'
+ hostnamexp: 'ubuntu-host-$(openssl rand -hex 3)'
+ hostnamexp: 'ccl-$(dmidecode -s chassis-serial-number)'
+ username: 'codeclub'
+ git: https://github.com/nonancourtlux/laptop.git
+ url: https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-desktop-amd64.iso
+ nopassword: false
+ purge:
+  - gnome-initial-setup
+ packages:
+  - imagemagick         # convert - for logos
+  - unattended-upgrades # https://help.ubuntu.com/community/AutomaticSecurityUpdates
+  - dbus-x11            # dbus-launch gsettings set org.gnome.desktop.screensaver lock-enabled false - https://ubuntu-mate.community/t/error-cannot-autolaunch-d-bus-without-x11-display/11928
+  - firefox             # snap 2 apt ?
+ #  gsettings range org.gnome.desktop.background picture-options
+ #  gsettings list-recursively org.gnome.desktop.background
+ #  gsettings get org.gnome.shell favorite-apps
+ # ['ubuntu-desktop-bootstrap_ubuntu-desktop-bootstrap.desktop', 'firefox_firefox.desktop', 'org.gnome.Evolution.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Rhythmbox3.desktop', 'libreoffice-writer.desktop', 'snap-store_snap-store.desktop', 'yelp.desktop']
+ pin2dash:
+    - org.gnome.Nautilus.desktop
+    - snap-store_snap-store.desktop
+    - yelp.desktop
+    - firefox.desktop
+ gnome:
+    -  dir: "org.gnome.desktop.screensaver"
+       key: "lock-enabled"
+       value : "false"
+    -  dir: "org.gnome.desktop.screensaver"
+       key: "ubuntu-lock-on-suspend"
+       value : "false"
+    -  dir: org.gnome.desktop.background
+       key: picture-options
+       value:  "centered"
+    -  dir: org.gnome.desktop.session
+       key: idle-delay
+       value: 60
+    -  dir: org.gnome.desktop.screensaver
+       key: idle-activation-enabled
+       value: "false"
+ sudo:
+  dest: "/etc/sudoers.d/90-codeclub"
+  cmnd:
+        - name: ADMIN
+          members: /usr/bin/flock -x  /tmp/robot /bin/bash  /root/cloud-init.sh
+        - name: REBOOT
+          members: /usr/sbin/reboot , /usr/sbin/poweroff
+        - name: RESET
+          members: /usr/bin/make -C /root/laptop scratch
+  privileges:
+        - name: "%adm"
+          entry: "ALL=(ALL) NOPASSWD: ADMIN,REBOOT,RESET"    
+ cache: /tmp # set to /tmp to not get cached logo survive reboot  or unset to get default tmp/
+ logo:
+  # https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Linux_mascot_tux.png/500px-Linux_mascot_tux.png
+  # https://upload.wikimedia.org/wikipedia/en/thumb/d/d2/CoderDojo_Original_Roundel_with_Long_Form_Logotype.svg/320px-CoderDojo_Original_Roundel_with_Long_Form_Logotype.svg.png
+# During boot 
+  - src: https://codeclub.lu/wp-content/themes/codeclub/dist/images/logo_horizontal_9ff16afb.png
+    size: 248x87
+    dest:
+     - /usr/share/plymouth/ubuntu-logo.png               # during boot
+     - /usr/share/plymouth/themes/spinner/watermark.png
+# Background
+  - src: https://codeclub.org/assets/code-club-logo-stacked-898406398f93d66cfd99679bf1ba4bcec9ac84148a4c3874036e353b3b34e278.svg
+    # https://codeclub.lu/wp-content/themes/codeclub/dist/images/logo_horizontal_9ff16afb.png
+    #size: "3840x2160" # PGCD = 240file /usr/share/backgrounds/warty-final-ubuntu.png
+    size: "3840x2160"
+    dest:
+     - /usr/share/backgrounds/warty-final-ubuntu.png
+ firefox:
+   autoconfig: mozilla.cfg
+   homepage: "https://codeclub.lu/"
+   additional:
+     - https://scratch.mit.edu/
+     - https://www.makeblock.com
+   bookmarks:
+     - URL: https://codeclub.lu
+       Placement: toolbar
+     - URL: https://coderdojo.lu/
+       Placement: toolbar
+ rename: # make view
+  611dcb1c2fa0361225b907b3ca7e5647a11b0f53f8d39b016c2fa0bf36070bfe: mickey
+  111cf8954b4a941ae566db6d31db03a8a3283234a5e9d6aa6ed266552b358c14: daisy
+# https://cdimage.ubuntu.com/ubuntu-mini-iso/noble/daily-live/20250529/noble-mini-iso-amd64.iso
+# https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-live-server-amd64.iso
+# https://cdimage.ubuntu.com/lubuntu/releases/noble/release/lubuntu-24.04.2-desktop-amd64.iso
+# http://ftp.free.fr/mirrors/ftp.xubuntu.com/releases/24.04/release/xubuntu-24.04.2-minimal-amd64.iso
+# https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-desktop-amd64.iso
+# https://releases.ubuntu.com/25.04/ubuntu-25.04-desktop-amd64.iso 
+
+

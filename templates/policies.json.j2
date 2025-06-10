@@ -1,0 +1,56 @@
+{
+  "policies": {
+    "UserMessaging": {
+      "ExtensionRecommendations": false,
+      "FeatureRecommendations": false,
+      "UrlbarInterventions": false,
+      "SkipOnboarding": true,
+      "MoreFromMozilla": false,
+      "FirefoxLabs": false,
+      "Locked": true
+    },
+    "FirefoxSuggest": {
+      "WebSuggestions": false,
+      "SponsoredSuggestions": false,
+      "ImproveSuggest": false,
+      "Locked": true
+    },
+     "FirefoxHome": {
+      "TopSites": false,
+      "SponsoredTopSites": false,
+      "Highlights": false,
+      "Pocket": false,
+      "SponsoredPocket": false,
+      "Snippets": false,
+      "Locked": true
+    },
+    "Homepage": {
+      "URL": "{{cc.firefox.homepage}}",
+      "Locked": true,
+      "StartPage": "homepage-locked",
+      "Additional": {{cc.firefox.additional|tojson}}
+    },
+    "Preferences": {
+      "browser.policies.loglevel": {
+        "Value": "debug",
+        "Status": "locked"
+      },
+      "browser.tabs.warnOnClose": {
+        "Value": false,
+        "Status": "default"
+      }
+    },
+    "AppAutoUpdate": true,
+    "AutofillAddressEnabled": false,
+    "AutofillCreditCardEnabled": false,
+    "BlockAboutConfig": false,
+    "BlockAboutProfiles": true,
+    "BlockAboutSupport": false,
+    "Bookmarks": {{cc.firefox.bookmarks|tojson}},
+    "DontCheckDefaultBrowser": true,
+    "DisableProfileImport": true,
+    "DisableFirefoxAccounts": true,
+    "DisableFirefoxStudies": true,
+    "DisableTelemetry": true
+  }
+}

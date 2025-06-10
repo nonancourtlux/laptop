@@ -1,0 +1,113 @@
+#cloud-config
+runcmd: # https://canonical-subiquity.readthedocs-hosted.com/en/latest/explanation/zero-touch-autoinstall.html
+  - [eval, 'echo $(cat /proc/cmdline) "autoinstall" > /root/cmdline']
+  - [eval, 'mount -n --bind -o ro /root/cmdline /proc/cmdline']
+  - [eval, 'snap restart subiquity.subiquity-server']
+  - [eval, 'snap restart subiquity.subiquity-service']
+  - [eval, 'sleep 30']
+autoinstall:
+    # autoinstall directives must be specified here, not directly at the
+    # top level.  These directives are processed by the Ubuntu Installer,
+    # and configure the target system to be installed.
+    # https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html
+  version: 1
+{% if cc.level < 2 %}
+  locale: "{{ cc.locale | default('en_US.UTF-8')}}"
+  timezone: "{{ cc.timezone | default('Europe/Luxembourg')}}"
+{% if cc.sections is defined and cc.sections|length > 0 %}  interactive-sections:
+{% for value in cc.sections %}
+          - "{{ value }}"
+{% endfor %}
+{% endif %}
+  ssh:
+    install-server: true
+    allow-pw: true
+{% if cc.ssh_authorized_keys is defined and cc.ssh_authorized_keys|length  > 0 %}    authorized-keys:
+{% for value in cc.ssh_authorized_keys %}
+          - "{{ value }}"
+{% endfor %}
+{% endif %}
+  # "[late-commands] are run in the installer environment with the installed system mounted at /target."
+  late-commands:
+    - echo "{{ cc.hostnamexp | default(cc.hostname) | default('ubuntu') }}" > /target/etc/hostname
+#    - chroot /target /usr/bin/passwd -u {{ cc.username }}
+  keyboard:
+   layout: "{{ cc.keyboard | default(cc.layout) | default('ch') }}"
+{% endif %}
+  identity:
+    realname: "{{ cc.realname | default('Code Club Luxembourg')}}"
+    hostname: "{{ cc.hostname | default('ubuntu')}}" 
+    username: "{{ cc.username | default('ubuntu')}}"
+    password: "{{ cc.hash }}"
+{% if cc.level < 1 %}
+  user-data:
+        # cloud-init directives may also be optionally be specified here.
+        # These directives also affect the target system to be installed,
+        # and are processed on first boot.
+    disable_root: true
+{% if cc.write_files is defined and cc.write_files|length > 0 %}    write_files:
+{% for value in cc.write_files %}
+    - encoding: {{ value["encoding"] }}
+      content:  '{{ value["content"] }}'
+      path:     {{ value["path"] }}
+      permissions: '{{ value["permissions"] }}'
+      owner:    {{ value["owner"] +":"+value["owner"] }}
+      defer: {{ value["defer"]  }}
+{% endfor %}
+{% endif %}
+    packages:
+     - ansible-core
+     - python3-pip
+     - net-tools
+     - git
+     - wireless-tools
+     - isc-dhcp-client
+     - whois
+     - at
+    runcmd:
+     - [/usr/bin/bash, {{ cc.cloud_init_shell }} ]
+{% if cc.playbook is defined  %}
+    package_upgrade: true
+    package_update: true
+    ansible:
+      install_method: distro
+      pull:
+       - url: "{{ cc.git }}"
+         playbook_names:
+          - "{{ cc.playbook | default('first.yaml')}}"
+{% endif %}
+    users:
+      - default
+      - name: scratch
+        primary_group: users
+        lock_passwd: false
+        passwd: "{{ cc.hashu }}"
+        shell: /bin/bash
+#        ssh_authorized_keys:
+#{% for value in cc.ssh_authorized_keys %}
+#          - "{{ value }}"
+#{% endfor %}
+{% endif %}
+{% if cc.level < 3 %}
+  # shutdown after first host initial provisioning
+  shutdown: reboot 
+  network:
+   network:
+    version: 2
+    renderer: networkd
+    ethernets:
+      {{ cc.if }}:
+        dhcp4: true
+{% if cc.wif is defined and cc.wif|length > 0 and cc.accesspoints is defined and cc.accesspoints|length  > 0 %}    wifis: # if error run sudo netplan try
+      {{ cc.wif }}:
+        dhcp4: true
+        access-points:
+{% for key, value in cc.accesspoints.items() %}
+         "{{ key }}":
+          password: "{{ value["password"] }}" 
+{% endfor %}
+{% endif %}
+{% endif %}
+
+
+

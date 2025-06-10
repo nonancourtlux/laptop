@@ -1,0 +1,48 @@
+#!/bin/sh
+
+OPT="-p"
+
+OPTSTRING=":f"
+
+while getopts ${OPTSTRING} opt; do
+  case ${opt} in
+    f)
+      OPT="" 
+      ;;
+    ?)
+      echo "Invalid option: -${OPTARG}."
+      exit 1
+      ;;
+  esac
+done
+
+
+DEVICE="{{ cc.deviso | default(cc.dev) }}"
+CIDATADIR="{{ cc.cidatadir }}"
+URL="{{ cc.url }}"
+DIR="{{ cc.dir }}"
+
+ISO="${URL##*/}"
+FILE=$DIR/$ISO
+
+echo "We download  $ISO if the file with  the signature is not found"
+cd $DIR &&   shasum -a 256 -c $CIDATADIR/signatures 2>&1 | grep "^$ISO: OK" || { curl $URL | tee $FILE | sha256sum ; }
+
+
+
+echo "We check if device $DEVICE is removable"
+
+FDEVICE="$(lsblk -l -p -n $DEVICE -o HOTPLUG | sort |uniq)"
+
+
+test -n "$FDEVICE" && test  "$FDEVICE" -eq "1" && {
+lsblk -l -p -n $DEVICE  | awk 'NF > 6 {print $1}' | xargs -n1 -r $OPT sudo umount
+#sudo dd if=/dev/zero of=$DEVICE bs=512 count=1 seek=0
+sudo sfdisk --delete $DEVICE
+sudo usb-creator-gtk --iso=$FILE
+
+#sudo dd if=$FILE of=$DEVICE bs=1k conv=fdatasync status=progress
+sudo partprobe $DEVICE
+lsblk -l -p -n $DEVICE  | awk 'NF > 6 {print $1}' | xargs -n1 -r $OPT sudo umount
+}
+

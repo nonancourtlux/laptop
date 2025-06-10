@@ -1,0 +1,160 @@
+- name: Write hostname
+  hosts: localhost
+  gather_facts: yes
+  vars_files:
+   - vars/default.yaml 
+  tasks:
+  - name: Load a variable file based on the OS type, or a default if not found. Using free-form to specify the file.
+    ansible.builtin.include_vars:
+     name: cc_override
+     files_matching: "{{alt | default('default.yaml')}}"
+     dir: vars
+  - ansible.builtin.copy:
+      src: "{{ cc.secrets }}.example"
+      dest: "{{ cc.secrets }}"
+      force: no
+    register: feedsecret
+
+  - pause:
+     prompt: "We just prefill {{ cc.secrets }}. Please review {{ cc.secrets }}"
+     seconds: 10
+    when:
+     - feedsecret.changed
+
+  - ansible.builtin.set_fact:
+     cc_secrets: "{{ lookup('ansible.builtin.file', cc.secrets) | from_yaml  }}"
+  
+  - ansible.builtin.set_fact:
+     cc: "{{ cc | ansible.builtin.combine(cc_secrets.cc,recursive=true) | ansible.builtin.combine(cc_override.cc,recursive=true) }}"
+  
+  - pause:
+        prompt: "Give admin password for {{cc.username}}"
+        echo: false
+    register: unixadmin
+    when:
+     - cc.unixadmin is not defined
+     - cc.hash   is not defined
+
+  - pause:
+        prompt: "Give admin password for scratch"
+        echo: false
+    register: unixuser
+    when:
+     - cc.unixuser is not defined
+     - cc.hashu   is not defined
+
+ 
+
+  - set_fact:
+      cc_secrets:  "{{ cc_secrets | ansible.builtin.combine({'cc':{'hash': lookup('ansible.builtin.pipe', 'mkpasswd -m yescrypt -s  '+(unixadmin.user_input|default(cc.unixadmin)|default(cc.username)))}},recursive=true) }}"
+    when:
+     - cc.hash   is not defined
+
+  - set_fact:
+      cc_secrets:  "{{ cc_secrets | ansible.builtin.combine({'cc':{'hashu':lookup('ansible.builtin.pipe', 'mkpasswd -m yescrypt -s  '+(unixuser.user_input|default(cc.unixuser)|default('scratch')))}},recursive=true) }}"
+    when:
+     - cc.hashu   is not defined
+
+     
+  - ansible.builtin.set_fact:
+     cc: "{{ cc | ansible.builtin.combine(cc_secrets.cc,recursive=true) | ansible.builtin.combine(cc_override.cc,recursive=true) }}"
+
+  - copy:
+     content: '{{ cc_secrets | to_nice_yaml  }}'
+     dest: "{{cc.secrets}}"
+    when:
+     - (unixuser is defined or  unixadmin is defined ) 
+
+
+
+  - ansible.builtin.file:
+       path: "{{ cc.cidatadir }}"
+       state: directory
+       mode: '0755'
+
+  
+  - ansible.builtin.template:
+       src: "templates/{{ item }}.j2"
+       dest: "{{ cc.cidatadir }}/{{ item }}"
+    loop:
+     - "cloud-init.sh"
+     - "root"
+
+  - ansible.builtin.copy: # Needed to validate download  & skip them if signature is ok
+      src: "{{ item }}"
+      dest: "{{ cc.cidatadir }}/{{item | basename}}"
+    loop:
+     - files/signatures
+     - vars/secrets.yaml
+
+  - ansible.builtin.set_fact:
+     write_files: "{{ write_files|default([]) + [{'encoding' : 'b64' , 'path' : item.path , 'content': lookup('ansible.builtin.file', item.src) | b64encode  ,'permissions' : item.permissions | default('0755')  , 'defer' : item.defer | default(true)  , 'owner' : item.owner | default('root') } ]}}"
+    loop:
+      - { path: "{{ cc.cloud_init_shell }}" , src: "{{cc.cidatadir}}/{{cc.cloud_init_shell|basename}}"  }
+      - { path: '/var/spool/cron/crontabs/root' , src: "{{cc.cidatadir}}/root" , permissions: "0600" }
+      - { path: "/root/secrets.yaml" , src: "{{cc.cidatadir}}/secrets.yaml"  }
+
+  - debug:
+     msg: "{{ write_files }}"
+
+
+  - ansible.builtin.set_fact:
+     cc: "{{ cc | ansible.builtin.combine({'write_files': write_files}) }}"
+    when:
+     - write_files is defined
+
+
+
+  - ansible.builtin.template:
+       src: "templates/{{ item }}.j2"
+       dest: "{{ cc.cidatadir }}/{{ item }}"
+    loop:
+     - "user-data"
+     - "meta-data"
+     - "nocloud-usb.sh"
+     - "media-usb.sh"
+
+  - ansible.builtin.file:
+       dest: "/tmp/{{ item }}"
+       src: "{{ cc.cidatadir }}/{{ item }}"
+       state: link
+    loop:
+     - "nocloud-usb.sh"
+     - "media-usb.sh"
+    when:
+     - not cc.cidatadir == "/tmp"
+
+
+
+  - ansible.builtin.file:
+       path: "{{ cc.cidatadir }}/{{ item }}"
+       mode: '0755'
+    loop:
+     - "nocloud-usb.sh"
+     - "media-usb.sh"
+
+  
+
+
+  - debug:
+      msg:
+       - "Check file : cat {{ cc.cidatadir }}/user-data" 
+       - "Insert a small usb and run {{ cc.cidatadir }}/nocloud-usb.sh"
+       - "Insert a larger usb and run {{ cc.cidatadir }}/media-usb.sh"
+ 
+
+#  - community.general.ssh_config:
+#     user: "{{ansible_user_id}}"
+#     #strict_host_key_checking: accept-new
+#     strict_host_key_checking: no
+#     host: "*"
+#    delegate_to: localhost
+#    run_once: true
+
+#  - name: "Burning nocloud stuff to {{ cc.dev }} - you may enter a sudo password"
+#    ansible.builtin.script: 
+#     cmd: "{{ cc.cidatadir }}/nocloud-usb.sh -f"
+#    args:
+#      executable: "/bin/bash" 
+
+    

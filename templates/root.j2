@@ -1,0 +1,2 @@
+# chmod u=rw,og= /var/spool/cron/crontabs/root
+@reboot test -f {{ cc.cloud_init_shell }} && flock -x  /tmp/robot /bin/bash  {{ cc.cloud_init_shell }}

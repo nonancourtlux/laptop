@@ -1,0 +1,55 @@
+#!/bin/sh
+
+
+OPT="-p"
+
+OPTSTRING=":f"
+
+while getopts ${OPTSTRING} opt; do
+  case ${opt} in
+    f)
+      OPT=""
+      ;;
+    ?)
+      echo "Invalid option: -${OPTARG}."
+      exit 1
+      ;;
+  esac
+done
+
+DEVICE="{{ cc.dev }}"
+CIDATADIR="{{ cc.cidatadir }}"
+
+# We check if device is removable
+FDEVICE="$(lsblk -l -p -n $DEVICE -o HOTPLUG | sort |uniq)"
+
+
+echo "We check if device $DEVICE is removable"
+
+
+{% if cc.debug is defined and cc.debug %}  
+
+test -n "$FDEVICE" && test  "$FDEVICE" -eq "1" && {
+# We will love to get  {{ cc.cloud_init_shell  | basename  }}
+lsblk -l -p -n $DEVICE  | awk 'NF > 6 {print $1}' | xargs -n1 -r $OPT sudo umount
+sudo mkfs.vfat -I -F 32 -n 'CIDATA' ${DEVICE}
+TMPMOUNT=$(mktemp -d )
+sudo mount ${DEVICE} $TMPMOUNT
+sudo rsync -r $CIDATADIR/user-data $TMPMOUNT
+sudo rsync -r $CIDATADIR/meta-data $TMPMOUNT
+sudo rsync -r $CIDATADIR $TMPMOUNT
+lsblk -l -p -n $DEVICE  | awk 'NF > 6 {print $1}' | xargs -n1 -r sudo umount
+}
+
+{% else %}
+
+
+test -n "$FDEVICE" && test  "$FDEVICE" -eq "1" && {
+# We will love to get  {{ cc.cloud_init_shell  | basename  }}  
+cd $CIDATADIR && cloud-localds nocloud.iso user-data meta-data
+lsblk -l -p -n $DEVICE  | awk 'NF > 6 {print $1}' | xargs -n1 -r $OPT sudo umount
+sudo dd if=nocloud.iso of=$DEVICE bs=1k conv=fdatasync status=progress
+}
+
+
+{% endif %}
